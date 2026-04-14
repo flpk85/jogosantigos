@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 24px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: #e94560;
+    }
+
+    .setup {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #16213e;
+      padding: 24px;
+      border-radius: 12px;
+      width: 300px;
+    }
+
+    .setup label {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 2px;
+    }
+
+    .setup input {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #0f3460;
+      background: #0f3460;
+      color: #eee;
+      font-size: 1rem;
+      width: 100%;
+    }
+
+    .setup input:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #e94560;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #c73652;
+    }
+
+    .game {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .scoreboard {
+      display: flex;
+      gap: 32px;
+      background: #16213e;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+
+    .score-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .score-item .name {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .score-item .points {
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+
+    .score-x .points { color: #e94560; }
+    .score-draw .points { color: #f5a623; }
+    .score-o .points { color: #4fc3f7; }
+
+    .status {
+      font-size: 1.1rem;
+      height: 28px;
+      color: #ddd;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 6px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: #16213e;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .cell:hover:not(.taken) {
+      background: #0f3460;
+      transform: scale(1.04);
+    }
+
+    .cell.x { color: #e94560; }
+    .cell.o { color: #4fc3f7; }
+
+    .cell.win {
+      background: #0f3460;
+      box-shadow: 0 0 12px rgba(233, 69, 96, 0.5);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-secondary {
+      background: #0f3460;
+    }
+
+    .btn-secondary:hover {
+      background: #1a4a8a;
+    }
+
+    .winner-msg {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #f5a623;
+      height: 32px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Tic Tac Toe</h1>
+
+  <div class="setup" id="setup">
+    <div>
+      <label>Nome do Jogador X</label>
+      <input type="text" id="nameX" placeholder="Ex: Alice" maxlength="20" />
+    </div>
+    <div>
+      <label>Nome do Jogador O</label>
+      <input type="text" id="nameO" placeholder="Ex: Bob" maxlength="20" />
+    </div>
+    <button onclick="startGame()">Iniciar Jogo</button>
+  </div>
+
+  <div class="game" id="game">
+    <div class="scoreboard">
+      <div class="score-item score-x">
+        <span class="name" id="labelX">X</span>
+        <span class="points" id="scoreX">0</span>
+      </div>
+      <div class="score-item score-draw">
+        <span class="name">Empates</span>
+        <span class="points" id="scoreDraw">0</span>
+      </div>
+      <div class="score-item score-o">
+        <span class="name" id="labelO">O</span>
+        <span class="points" id="scoreO">0</span>
+      </div>
+    </div>
+
+    <div class="winner-msg" id="winnerMsg"></div>
+    <div class="status" id="status"></div>
+
+    <div class="board" id="board">
+      <div class="cell" onclick="play(0)"></div>
+      <div class="cell" onclick="play(1)"></div>
+      <div class="cell" onclick="play(2)"></div>
+      <div class="cell" onclick="play(3)"></div>
+      <div class="cell" onclick="play(4)"></div>
+      <div class="cell" onclick="play(5)"></div>
+      <div class="cell" onclick="play(6)"></div>
+      <div class="cell" onclick="play(7)"></div>
+      <div class="cell" onclick="play(8)"></div>
+    </div>
+
+    <div class="actions">
+      <button onclick="resetRound()">Nova Rodada</button>
+      <button class="btn-secondary" onclick="resetAll()">Reiniciar Tudo</button>
+    </div>
+  </div>
+
+  <script>
+    const WINS = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    let state = {
+      board: Array(9).fill(null),
+      current: 'X',
+      over: false,
+      names: { X: 'Jogador X', O: 'Jogador O' },
+      scores: { X: 0, O: 0, draw: 0 }
+    };
+
+    function startGame() {
+      const nx = document.getElementById('nameX').value.trim() || 'Jogador X';
+      const no = document.getElementById('nameO').value.trim() || 'Jogador O';
+      state.names.X = nx;
+      state.names.O = no;
+      document.getElementById('labelX').textContent = nx;
+      document.getElementById('labelO').textContent = no;
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('game').style.display = 'flex';
+      resetRound();
+    }
+
+    function play(i) {
+      if (state.over || state.board[i]) return;
+      state.board[i] = state.current;
+      renderBoard();
+
+      const winner = checkWinner();
+      if (winner) {
+        state.scores[winner]++;
+        updateScores();
+        highlightWin(winner);
+        document.getElementById('winnerMsg').textContent =
+          `🏆 ${state.names[winner]} venceu!`;
+        document.getElementById('status').textContent = '';
+        state.over = true;
+        return;
+      }
+
+      if (state.board.every(c => c)) {
+        state.scores.draw++;
+        updateScores();
+        document.getElementById('winnerMsg').textContent = 'Empate!';
+        document.getElementById('status').textContent = '';
+        state.over = true;
+        return;
+      }
+
+      state.current = state.current === 'X' ? 'O' : 'X';
+      document.getElementById('status').textContent =
+        `Vez de ${state.names[state.current]}`;
+    }
+
+    function checkWinner() {
+      for (const [a,b,c] of WINS) {
+        if (state.board[a] && state.board[a] === state.board[b] && state.board[a] === state.board[c])
+          return state.board[a];
+      }
+      return null;
+    }
+
+    function highlightWin(winner) {
+      const cells = document.querySelectorAll('.cell');
+      for (const [a,b,c] of WINS) {
+        if (state.board[a] === winner && state.board[b] === winner && state.board[c] === winner) {
+          cells[a].classList.add('win');
+          cells[b].classList.add('win');
+          cells[c].classList.add('win');
+        }
+      }
+    }
+
+    function renderBoard() {
+      const cells = document.querySelectorAll('.cell');
+      state.board.forEach((val, i) => {
+        cells[i].textContent = val || '';
+        cells[i].className = 'cell' + (val ? ` ${val.toLowerCase()} taken` : '');
+      });
+    }
+
+    function updateScores() {
+      document.getElementById('scoreX').textContent = state.scores.X;
+      document.getElementById('scoreO').textContent = state.scores.O;
+      document.getElementById('scoreDraw').textContent = state.scores.draw;
+    }
+
+    function resetRound() {
+      state.board = Array(9).fill(null);
+      state.current = 'X';
+      state.over = false;
+      renderBoard();
+      document.getElementById('winnerMsg').textContent = '';
+      document.getElementById('status').textContent =
+        `Vez de ${state.names[state.current]}`;
+    }
+
+    function resetAll() {
+      state.scores = { X: 0, O: 0, draw: 0 };
+      updateScores();
+      resetRound();
+    }
+  </script>
+
+</body>
+</html>
