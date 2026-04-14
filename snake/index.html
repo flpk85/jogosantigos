@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: #4fc3f7;
+    }
+
+    .hud {
+      display: flex;
+      gap: 40px;
+      background: #16213e;
+      padding: 12px 32px;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+
+    .hud-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .hud-item .label {
+      font-size: 0.75rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .hud-item .value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #4fc3f7;
+    }
+
+    canvas {
+      background: #16213e;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: rgba(26, 26, 46, 0.92);
+      border-radius: 10px;
+    }
+
+    .overlay h2 {
+      font-size: 1.8rem;
+      color: #e94560;
+    }
+
+    .overlay p {
+      color: #aaa;
+      font-size: 1rem;
+    }
+
+    .overlay .score-display {
+      font-size: 1.2rem;
+      color: #4fc3f7;
+    }
+
+    button {
+      padding: 10px 28px;
+      border: none;
+      border-radius: 8px;
+      background: #e94560;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #c73652;
+    }
+
+    .controls {
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    #wrapper {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Snake</h1>
+
+  <div class="hud">
+    <div class="hud-item">
+      <span class="label">Pontos</span>
+      <span class="value" id="score">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="label">Recorde</span>
+      <span class="value" id="best">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="label">Nível</span>
+      <span class="value" id="level">1</span>
+    </div>
+  </div>
+
+  <div id="wrapper">
+    <canvas id="canvas" width="400" height="400"></canvas>
+
+    <div class="overlay" id="overlay" style="width:400px;height:400px;top:0;left:0;">
+      <h2 id="overlayTitle">Snake</h2>
+      <p id="overlayMsg">Use as setas do teclado para mover</p>
+      <div class="score-display" id="overlayScore"></div>
+      <button id="overlayBtn" onclick="startGame()">Jogar</button>
+    </div>
+  </div>
+
+  <div class="controls">Setas / WASD para mover &nbsp;|&nbsp; P para pausar</div>
+
+  <script>
+    const COLS = 20;
+    const ROWS = 20;
+    const CELL = 20;
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let snake, dir, nextDir, food, score, best, level, speed, loop, paused, running;
+
+    best = 0;
+
+    function startGame() {
+      document.getElementById('overlay').style.display = 'none';
+      snake = [{ x: 10, y: 10 }];
+      dir = { x: 1, y: 0 };
+      nextDir = { x: 1, y: 0 };
+      score = 0;
+      level = 1;
+      speed = 150;
+      paused = false;
+      running = true;
+      spawnFood();
+      updateHud();
+      clearInterval(loop);
+      loop = setInterval(tick, speed);
+    }
+
+    function spawnFood() {
+      let pos;
+      do {
+        pos = {
+          x: Math.floor(Math.random() * COLS),
+          y: Math.floor(Math.random() * ROWS)
+        };
+      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+      food = pos;
+    }
+
+    function tick() {
+      if (paused) return;
+
+      dir = nextDir;
+
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+      // Colisão com paredes
+      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+        return gameOver();
+      }
+
+      // Colisão com o próprio corpo
+      if (snake.some(s => s.x === head.x && s.y === head.y)) {
+        return gameOver();
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        score += level * 10;
+        if (score > best) best = score;
+        spawnFood();
+        updateLevel();
+        updateHud();
+      } else {
+        snake.pop();
+      }
+
+      draw();
+    }
+
+    function updateLevel() {
+      const newLevel = Math.floor(score / 100) + 1;
+      if (newLevel !== level) {
+        level = newLevel;
+        speed = Math.max(60, 150 - (level - 1) * 10);
+        clearInterval(loop);
+        loop = setInterval(tick, speed);
+      }
+    }
+
+    function updateHud() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('best').textContent = best;
+      document.getElementById('level').textContent = level;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Grade (sutil)
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      for (let x = 0; x < COLS; x++) {
+        for (let y = 0; y < ROWS; y++) {
+          ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
+        }
+      }
+
+      // Comida
+      ctx.fillStyle = '#e94560';
+      ctx.beginPath();
+      ctx.arc(
+        food.x * CELL + CELL / 2,
+        food.y * CELL + CELL / 2,
+        CELL / 2 - 2, 0, Math.PI * 2
+      );
+      ctx.fill();
+
+      // Cobra
+      snake.forEach((seg, i) => {
+        const ratio = 1 - (i / snake.length) * 0.5;
+        ctx.fillStyle = i === 0
+          ? '#4fc3f7'
+          : `rgba(79, 195, 247, ${ratio})`;
+        const pad = i === 0 ? 1 : 2;
+        const radius = i === 0 ? 4 : 3;
+        roundRect(
+          seg.x * CELL + pad,
+          seg.y * CELL + pad,
+          CELL - pad * 2,
+          CELL - pad * 2,
+          radius
+        );
+      });
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function gameOver() {
+      clearInterval(loop);
+      running = false;
+      if (score > best) best = score;
+      updateHud();
+
+      const overlay = document.getElementById('overlay');
+      document.getElementById('overlayTitle').textContent = 'Game Over';
+      document.getElementById('overlayMsg').textContent = 'Você colidiu!';
+      document.getElementById('overlayScore').textContent = `Pontuação: ${score}`;
+      document.getElementById('overlayBtn').textContent = 'Jogar Novamente';
+      overlay.style.display = 'flex';
+    }
+
+    document.addEventListener('keydown', e => {
+      switch (e.key) {
+        case 'ArrowUp':    case 'w': case 'W':
+          if (dir.y !== 1)  nextDir = { x: 0, y: -1 }; break;
+        case 'ArrowDown':  case 's': case 'S':
+          if (dir.y !== -1) nextDir = { x: 0, y: 1 };  break;
+        case 'ArrowLeft':  case 'a': case 'A':
+          if (dir.x !== 1)  nextDir = { x: -1, y: 0 }; break;
+        case 'ArrowRight': case 'd': case 'D':
+          if (dir.x !== -1) nextDir = { x: 1, y: 0 };  break;
+        case 'p': case 'P':
+          if (running) paused = !paused; break;
+      }
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+      }
+    });
+  </script>
+
+</body>
+</html>
