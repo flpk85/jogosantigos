@@ -237,6 +237,7 @@
     let state = {
       board: Array(9).fill(null),
       current: 'X',
+      roundStarter: 'X',
       over: false,
       names: { X: 'Jogador X', O: 'Jogador O' },
       scores: { X: 0, O: 0, draw: 0 }
@@ -251,6 +252,7 @@
       document.getElementById('labelO').textContent = no;
       document.getElementById('setup').style.display = 'none';
       document.getElementById('game').style.display = 'flex';
+      state.roundStarter = 'O'; // resetRound vai alternar para X na primeira rodada
       resetRound();
     }
 
@@ -320,7 +322,8 @@
 
     function resetRound() {
       state.board = Array(9).fill(null);
-      state.current = 'X';
+      state.roundStarter = state.roundStarter === 'X' ? 'O' : 'X';
+      state.current = state.roundStarter;
       state.over = false;
       renderBoard();
       document.getElementById('winnerMsg').textContent = '';
@@ -330,6 +333,7 @@
 
     function resetAll() {
       state.scores = { X: 0, O: 0, draw: 0 };
+      state.roundStarter = 'X';
       updateScores();
       resetRound();
     }
